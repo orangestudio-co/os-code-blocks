@@ -1,6 +1,6 @@
-# HubSpot Form Submitter
+# OS HubSpot Submit
 
-A single reusable script that wires any HTML form up to HubSpot's Forms API. Hosted once, used everywhere — no per-site code edits. Each form describes its own fields in HTML.
+A single reusable script that wires any HTML form up to HubSpot's Forms API. Hosted once, used everywhere — no per-site code edits. Each form describes its own fields and success behavior in HTML.
 
 ## Setup
 
@@ -9,11 +9,11 @@ Include the script once per site. Set your Portal ID on the script tag:
 ```html
 <script
   src="https://cdn.jsdelivr.net/gh/orangestudio-co/os-code-blocks/hubspot-submit/os-hubspot-submit.js"
-  data-portal-id="47780539"
+  data-portal-id="PORTAL_ID"
 ></script>
 ```
 
-> Alternatively, set `window.HS_PORTAL_ID = '47780539'` in a `<script>` before the file loads.
+> Alternatively, set `window.HS_PORTAL_ID = 'PORTAL_ID'` in a `<script>` before the file loads.
 
 ## Building a form
 
@@ -21,7 +21,7 @@ Include the script once per site. Set your Portal ID on the script tag:
 - Add `data-os-form-field="PROPERTY"` to each input. The value must be the HubSpot property's **internal name** (`firstname`, not "First Name").
 
 ```html
-<form data-os-form="43d16efd-62ca-41aa-9c10-4bb117c7d8f8">
+<form data-os-form="FORM_ID">
   <input data-os-form-field="firstname" name="first-name" required />
   <input data-os-form-field="email" name="email" type="email" required />
   <button type="submit">Send</button>
@@ -68,23 +68,50 @@ Works automatically with text, email, textarea, and single-select dropdowns. Als
 <input type="checkbox" data-os-form-field="interests" value="Support" />
 ```
 
-## Success message
+## Success behavior
 
-On success, the form is replaced with:
+Choose per-form in HTML. Priority order: redirect → reveal → message.
+
+**Redirect** to a thank-you page:
 
 ```html
-<p class="lfb_success-message">
-  Thanks for reaching out. Our business services team will be in touch.
-</p>
+<form data-os-form="..." data-os-success-redirect="/thank-you"></form>
 ```
 
-Style `.lfb_success-message` to taste. Edit the text in `form.js` if you want something different globally.
+**Reveal an existing hidden element** — for pre-built styled success blocks:
+
+```html
+<form data-os-form="..." data-os-success-reveal="#signup-success">
+  <div id="signup-success" style="display:none">
+    <h3>You're in!</h3>
+    <a href="/next">Continue</a>
+  </div>
+</form>
+```
+
+Hides the form by default; add `data-os-success-hide-form="false"` to keep it visible. The target must start hidden via inline `display:none`.
+
+**Message replace** (the default) — replaces the form with a `<p>`. Override text and/or class:
+
+```html
+<form
+  data-os-form="..."
+  data-os-success-message="You're on the list!"
+  data-os-success-class="my-custom-success"
+></form>
+```
+
+With no success attributes at all, you get:
+
+- Text: `Your submission has been received`
+- Class: `form_success_text`
 
 ## Gotchas
 
 - **Field name mismatch = failed submission.** Every `data-os-form-field` must exist as a property on the target object _and_ be included in the form's field list in HubSpot. One bad field name errors the whole submit.
 - **Required fields** rely on the native `required` attribute — including consent checkboxes. Mark them `required` in the HTML.
 - **Multi-select values** must match HubSpot's internal option values character-for-character.
+- **Success message** uses `textContent`, so HTML in `data-os-success-message` won't render (use the reveal option for rich content).
 - Errors are logged to the browser console (`HubSpot errors:` / `Submission error:`), not shown to the user.
 
 ## Not covered
