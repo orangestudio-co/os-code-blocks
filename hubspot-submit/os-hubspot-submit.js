@@ -13,9 +13,8 @@
       return checked ? checked.value : "";
     }
 
-    // Single checkbox: HubSpot booleans expect "true"/"false" strings
+    // Checkbox: single = boolean, multiple sharing a name = multi-select
     if (type === "checkbox") {
-      // Multiple checkboxes sharing a field name = multi-select
       const group = form.querySelectorAll(
         `[data-os-form-field="${fieldName}"]`,
       );
@@ -23,7 +22,7 @@
         return [...group]
           .filter((c) => c.checked)
           .map((c) => c.value)
-          .join(";"); // HubSpot multi-checkbox delimiter
+          .join(";");
       }
       return el.checked
         ? el.value && el.value !== "on"
@@ -38,6 +37,34 @@
     }
 
     return el.value ?? "";
+  }
+
+  function handleSuccess(form) {
+    // 1. Redirect wins if present
+    const redirect = form.dataset.osSuccessRedirect;
+    if (redirect) {
+      window.location.href = redirect;
+      return;
+    }
+
+    // 2. Reveal an existing element (by selector) instead of replacing
+    const revealSel = form.dataset.osSuccessReveal;
+    if (revealSel) {
+      const el = document.querySelector(revealSel);
+      if (el) el.style.display = "";
+      if (form.dataset.osSuccessHideForm !== "false")
+        form.style.display = "none";
+      return;
+    }
+
+    // 3. Default: replace form with a message
+    const msg =
+      form.dataset.osSuccessMessage || "Your submission has been received";
+    const cls = form.dataset.osSuccessClass || "form_success_text";
+    const p = document.createElement("p");
+    p.className = cls;
+    p.textContent = msg;
+    form.replaceWith(p);
   }
 
   document.querySelectorAll("[data-os-form]").forEach((form) => {
@@ -73,8 +100,7 @@
         );
         const data = await res.json();
         if (!data.errors) {
-          form.outerHTML =
-            '<p class="lfb_success-message">Thanks for reaching out. Our business services team will be in touch.</p>';
+          handleSuccess(form);
         } else {
           console.error("HubSpot errors:", data.errors);
         }
